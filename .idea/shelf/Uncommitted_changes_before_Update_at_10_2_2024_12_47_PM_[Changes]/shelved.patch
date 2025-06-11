@@ -1,0 +1,477 @@
+Index: main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import tkinter as tk\r\nfrom tkinter import messagebox\r\nimport networkx as nx\r\nimport matplotlib.pyplot as plt\r\nimport re\r\nimport random\r\n\r\n# tạo ra được 1 trường input\r\n# tạo ra được 2 button (button: vẽ graph, random graph)\r\n# Khi nhấn button vẽ graph thì value của trường input phải hiển thị ra\r\ninput_widgets_shown = False\r\n\r\npopup = None\r\ndef show_ui(root):\r\n\r\n\r\n\r\n    button_random = tk.Button(root, text=\"Random graph\", command=create_popup)\r\n    button_random.pack(pady=10)\r\n\r\n\r\n    button_draw = tk.Button(root, text=\"Draw graph\", command=draw_graph)\r\n    button_draw.pack(pady=10)\r\n\r\n    global output_label\r\n    output_label = tk.Label(root, text=\"\")\r\n    output_label.pack(pady=10)\r\n\r\ndef create_popup():\r\n    global popup, entry_vertices, entry_edges, error_label\r\n\r\n    # Tạo cửa sổ pop-up\r\n    popup = tk.Toplevel()\r\n    popup.title(\"Nhập số đỉnh và số cạnh\")\r\n    popup_width = 300\r\n    popup_height = 300\r\n    popup.resizable(False, False)\r\n    \r\n    # Lấy kích thước của màn hình\r\n    screen_width = root.winfo_screenwidth()\r\n    screen_height = root.winfo_screenheight()\r\n\r\n    # Tính toán tọa độ để đặt pop-up vào giữa màn hình\r\n    center_x = int(screen_width / 2 - popup_width / 2)\r\n    center_y = int(screen_height / 2 - popup_height / 2)\r\n\r\n    # Đặt kích thước và vị trí của pop-up\r\n    popup.geometry(f\"{popup_width}x{popup_height}+{center_x}+{center_y}\")\r\n\r\n    label_vertices = tk.Label(popup, text=\"Nhập số đỉnh:\")\r\n    label_vertices.pack(pady=10)\r\n    entry_vertices = tk.Entry(popup, width=30)\r\n    entry_vertices.pack(pady=5)\r\n\r\n    label_edges = tk.Label(popup, text=\"Nhập số cạnh:\")\r\n    label_edges.pack(pady=10)\r\n    entry_edges = tk.Entry(popup, width=30)\r\n    entry_edges.pack(pady=5)\r\n\r\n    # Label để hiển thị lỗi trực tiếp trong pop-up\r\n    error_label = tk.Label(popup, text=\"\", fg=\"red\")\r\n    error_label.pack(pady=10)\r\n\r\n    button_confirm = tk.Button(popup, text=\"Xác nhận\", command=validate_input)\r\n    button_confirm.pack(pady=10)\r\n\r\n\r\ndef validate_input():\r\n    try:\r\n        # Lấy số đỉnh và số cạnh từ ô nhập\r\n        num_vertices = int(entry_vertices.get())\r\n        num_edges = int(entry_edges.get())\r\n\r\n        # Kiểm tra điều kiện nhập liệu\r\n        min_edges = num_vertices - 1\r\n        max_edges = (num_vertices * (num_vertices - 1)) // 2\r\n\r\n        if num_vertices < 2:\r\n            error_label.config(text=\"Số đỉnh phải lớn hơn hoặc bằng 2.\")\r\n            return\r\n\r\n        if num_vertices == 2 and num_edges != 1:\r\n            error_label.config(text=\"Nếu số đỉnh bằng 2, số cạnh phải bằng 1.\")\r\n            return\r\n\r\n        if num_edges < min_edges or num_edges > max_edges:\r\n            error_label.config(text=f\"Số cạnh phải từ {min_edges} đến {max_edges}.\")\r\n            return\r\n\r\n        # Nếu nhập đúng, đóng pop-up\r\n        popup.destroy()\r\n\r\n    except ValueError:\r\n        error_label.config(text=\"Vui lòng nhập số hợp lệ!\")\r\n# input:\r\n# 1,2,3\r\n# 1,3,5\r\n# lấy được số đầu tiên lưu vào biến cạnh first_edge\r\n# lấy được số thứ 2 lưu vào biến cạnh second_edge\r\n# lấy được số thứ 3 lưu vào biến weight\r\n# cắt theo \\n, sau đó cắt theo \",\"\r\n\r\n\r\n\r\ndef split_input():\r\n    # Đầu vào\r\n    text = \"1,2,3\\n1,3,5\\n1,6,7\"\r\n    print(\"Input text:\")\r\n    print(text)\r\n\r\n    # Định nghĩa regex cho việc kiểm tra đầu vào\r\n    pattern = r\"^([1-9]\\d*,[1-9]\\d*,[1-9]\\d*\\n)*[1-9]\\d*,[1-9]\\d*,[1-9]\\d*$\"\r\n\r\n    # Kiểm tra chuỗi đầu vào có hợp lệ không\r\n    if not re.match(pattern, text):\r\n        print(\"Giá trị nhập không hợp lệ\")\r\n        return\r\n\r\n    # Tách chuỗi theo dòng\r\n    lines = text.split('\\n')\r\n    result = []\r\n\r\n    # Xử lý từng dòng\r\n    for line in lines:\r\n        numbers = line.split(',')\r\n        result.append(numbers)\r\n\r\n    print(\"Parsed result:\")\r\n    print(result)\r\n\r\n\r\nsplit_input()\r\n\r\n# Gọi hàm\r\n# split_input()\r\n\r\n\r\n# Cho người dùng nhập vào số đỉnh tối đa: VD: 5\r\n# random số đỉnh của graph với range là 2 tới 5\r\n# Cho người dùng nhập vào số cạnh tối đa của 1 đỉnh với rang là từ 1 tới số\r\n# cạnh tối đa (số đỉnh - 1)\r\n# cho người dùng nhập số cạnh tối đa của 1 đỉnh trong điều kiện ở trên\r\n# mỗi khi random được 1 cạnh thì random 1 số weight nhất định\r\n\r\n# result: số đỉnh và số cạnh của mỗi đỉnh\r\ndef random_graph(max_num_nodes_input,max_num_edges_input):\r\n    num_nodes = []\r\n    num_nodes_random = random.randint(2, max_num_nodes_input)\r\n    for i in range(num_nodes_random):\r\n        num_nodes.append(i + 1)\r\n\r\n    max_num_edges_of_node = len(num_nodes) - 1\r\n    min_num_edges_of_node = 1\r\n\r\n    if (max_num_edges_input > max_num_edges_of_node) or (max_num_edges_input < min_num_edges_of_node):\r\n        print(\"Vui long nhap lai: \")\r\n\r\n    print(num_nodes)\r\n    for i in range(len(num_nodes)):\r\n        num_edges = random.randint(min_num_edges_of_node, max_num_edges_of_node)\r\n        num_nodes_expected = num_nodes.copy()\r\n        num_nodes_expected.remove(num_nodes[i])\r\n        isUndirected = random.randint(0, 1)\r\n        # dô thi vo huong\r\n        if isUndirected:\r\n            num_nodes_expected.remove(num_nodes[i])\r\n\r\n        for j in range(len(num_nodes_expected) - num_edges):\r\n            num_nodes_expected.remove(random.choice(num_nodes_expected))\r\n        print(f\"dinh {num_nodes[i]} co ${num_edges} canh: ${num_nodes_expected}\")\r\n\r\n\r\ndef draw_graph():\r\n\r\n\r\n    # Bước 1: Tạo một đồ thị rỗng\r\n    G = nx.Graph()\r\n\r\n    # Bước 2: Thêm các đỉnh (nodes)\r\n    G.add_nodes_from([1, 2, 3, 4, 5])\r\n\r\n    # Bước 3: Thêm các cạnh (edges)\r\n    G.add_edges_from([(1, 2), (1, 3), (2, 4), (3, 5)])\r\n\r\n    # Bước 4: Vẽ đồ thị\r\n    pos = nx.spring_layout(G)  # Tính toán vị trí các đỉnh\r\n    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=800, font_size=16, font_color='black')\r\n\r\n    # Hiển thị đồ thị\r\n    plt.title(\"Simple Graph\")\r\n    plt.show()\r\n\r\n\r\n\r\nif __name__ == '__main__':\r\n    root = tk.Tk()\r\n    root.title(\"Graph\")\r\n    show_ui(root)\r\n    root.state('zoomed')\r\n    root.resizable(False, False)\r\n    # khởi động UI\r\n    root.mainloop()\r\n\r\n# Tạo một đồ thị vô hướng\r\nG = nx.Graph()\r\n\r\n# Thêm đỉnh\r\nG.add_nodes_from([1, 2, 3, 4, 5])\r\n\r\n# Thêm cạnh\r\nG.add_edges_from([(1, 2), (1, 3), (2, 4), (3, 4), (4, 5)])\r\n\r\n# Vẽ đồ thị\r\nnx.draw(G, with_labels=True, node_color='lightblue', node_size=700, font_size=14, font_color='black')\r\nplt.title(\"Một đồ thị ví dụ\")\r\nplt.show()\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.py b/main.py
+--- a/main.py	(revision 0c9e39f36ad0e33d9c91e991bbf276e51d6b53ed)
++++ b/main.py	(date 1727847669887)
+@@ -2,216 +2,103 @@
+ from tkinter import messagebox
+ import networkx as nx
+ import matplotlib.pyplot as plt
+-import re
+-import random
+-
+-# tạo ra được 1 trường input
+-# tạo ra được 2 button (button: vẽ graph, random graph)
+-# Khi nhấn button vẽ graph thì value của trường input phải hiển thị ra
+-input_widgets_shown = False
++from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+ 
+-popup = None
+-def show_ui(root):
++class GraphApp:
++    def __init__(self, master):
++        self.error_label = None
++        self.entry_edges = None
++        self.entry_vertices = None
++        self.master = master
++        self.master.title("Graph Management")
++        self.master.state('zoomed')
++        self.master.resizable(False, False)
+ 
++        self.output_label = tk.Label(self.master, text="")
++        self.output_label.pack(pady=10)
+ 
++        self.button_random = tk.Button(self.master, text="Random graph",
++                                       command=self.create_popup)
++        self.button_random.pack(pady=10)
+ 
+-    button_random = tk.Button(root, text="Random graph", command=create_popup)
+-    button_random.pack(pady=10)
++        self.button_draw = tk.Button(self.master, text="Draw graph",
++                                     command=self.draw_graph)
++        self.button_draw.pack(pady=10)
+ 
++        self.popup = None
++        self.G = nx.Graph()
+ 
+-    button_draw = tk.Button(root, text="Draw graph", command=draw_graph)
+-    button_draw.pack(pady=10)
++    def create_popup(self):
++        self.popup = tk.Toplevel(self.master)
++        self.popup.title("Enter number of vertices and edges")
++        popup_width, popup_height = 300, 300
++        self.popup.resizable(False, False)
+ 
+-    global output_label
+-    output_label = tk.Label(root, text="")
+-    output_label.pack(pady=10)
+-
+-def create_popup():
+-    global popup, entry_vertices, entry_edges, error_label
+-
+-    # Tạo cửa sổ pop-up
+-    popup = tk.Toplevel()
+-    popup.title("Nhập số đỉnh và số cạnh")
+-    popup_width = 300
+-    popup_height = 300
+-    popup.resizable(False, False)
+-    
+-    # Lấy kích thước của màn hình
+-    screen_width = root.winfo_screenwidth()
+-    screen_height = root.winfo_screenheight()
+-
+-    # Tính toán tọa độ để đặt pop-up vào giữa màn hình
+-    center_x = int(screen_width / 2 - popup_width / 2)
+-    center_y = int(screen_height / 2 - popup_height / 2)
+-
+-    # Đặt kích thước và vị trí của pop-up
+-    popup.geometry(f"{popup_width}x{popup_height}+{center_x}+{center_y}")
++        screen_width = self.master.winfo_screenwidth()
++        screen_height = self.master.winfo_screenheight()
++        center_x = int(screen_width / 2 - popup_width / 2)
++        center_y = int(screen_height / 2 - popup_height / 2)
++        self.popup.geometry(
++            f"{popup_width}x{popup_height}+{center_x}+{center_y}")
+ 
+-    label_vertices = tk.Label(popup, text="Nhập số đỉnh:")
+-    label_vertices.pack(pady=10)
+-    entry_vertices = tk.Entry(popup, width=30)
+-    entry_vertices.pack(pady=5)
++        tk.Label(self.popup, text="Number of vertices:").pack(pady=10)
++        self.entry_vertices = tk.Entry(self.popup, width=30)
++        self.entry_vertices.pack(pady=5)
+ 
+-    label_edges = tk.Label(popup, text="Nhập số cạnh:")
+-    label_edges.pack(pady=10)
+-    entry_edges = tk.Entry(popup, width=30)
+-    entry_edges.pack(pady=5)
++        tk.Label(self.popup, text="Number of edges:").pack(pady=10)
++        self.entry_edges = tk.Entry(self.popup, width=30)
++        self.entry_edges.pack(pady=5)
+ 
+-    # Label để hiển thị lỗi trực tiếp trong pop-up
+-    error_label = tk.Label(popup, text="", fg="red")
+-    error_label.pack(pady=10)
++        self.error_label = tk.Label(self.popup, text="", fg="red")
++        self.error_label.pack(pady=10)
+ 
+-    button_confirm = tk.Button(popup, text="Xác nhận", command=validate_input)
+-    button_confirm.pack(pady=10)
++        tk.Button(self.popup, text="Confirm", command=self.validate_input).pack(
++            pady=10)
+ 
+-
+-def validate_input():
+-    try:
+-        # Lấy số đỉnh và số cạnh từ ô nhập
+-        num_vertices = int(entry_vertices.get())
+-        num_edges = int(entry_edges.get())
++    def validate_input(self):
++        try:
++            num_vertices = int(self.entry_vertices.get())
++            num_edges = int(self.entry_edges.get())
+ 
+-        # Kiểm tra điều kiện nhập liệu
+-        min_edges = num_vertices - 1
+-        max_edges = (num_vertices * (num_vertices - 1)) // 2
++            if num_vertices < 2:
++                self.error_label.config(
++                    text="Number of vertices must be at least 2.")
++                return
++
++            min_edges = num_vertices - 1
++            max_edges = (num_vertices * (num_vertices - 1)) // 2
+ 
+-        if num_vertices < 2:
+-            error_label.config(text="Số đỉnh phải lớn hơn hoặc bằng 2.")
+-            return
+-
+-        if num_vertices == 2 and num_edges != 1:
+-            error_label.config(text="Nếu số đỉnh bằng 2, số cạnh phải bằng 1.")
+-            return
+-
+-        if num_edges < min_edges or num_edges > max_edges:
+-            error_label.config(text=f"Số cạnh phải từ {min_edges} đến {max_edges}.")
+-            return
++            if num_edges < min_edges or num_edges > max_edges:
++                self.error_label.config(
++                    text=f"Number of edges must be between {min_edges} and {max_edges}.")
++                return
+ 
+-        # Nếu nhập đúng, đóng pop-up
+-        popup.destroy()
+-
+-    except ValueError:
+-        error_label.config(text="Vui lòng nhập số hợp lệ!")
+-# input:
+-# 1,2,3
+-# 1,3,5
+-# lấy được số đầu tiên lưu vào biến cạnh first_edge
+-# lấy được số thứ 2 lưu vào biến cạnh second_edge
+-# lấy được số thứ 3 lưu vào biến weight
+-# cắt theo \n, sau đó cắt theo ","
+-
++            self.random_graph(num_vertices, num_edges)
++            self.popup.destroy()
++        except ValueError:
++            self.error_label.config(text="Please enter valid numbers!")
+ 
++    def random_graph(self, num_vertices, num_edges):
++        self.G = nx.gnm_random_graph(num_vertices, num_edges)
++        self.output_label.config(
++            text=f"Random graph created with {num_vertices} vertices and {num_edges} edges.")
+ 
+-def split_input():
+-    # Đầu vào
+-    text = "1,2,3\n1,3,5\n1,6,7"
+-    print("Input text:")
+-    print(text)
+-
+-    # Định nghĩa regex cho việc kiểm tra đầu vào
+-    pattern = r"^([1-9]\d*,[1-9]\d*,[1-9]\d*\n)*[1-9]\d*,[1-9]\d*,[1-9]\d*$"
+-
+-    # Kiểm tra chuỗi đầu vào có hợp lệ không
+-    if not re.match(pattern, text):
+-        print("Giá trị nhập không hợp lệ")
+-        return
++    def draw_graph(self):
++        if not self.G.number_of_nodes():
++            self.output_label.config(text="Please create a random graph first.")
++            return
+ 
+-    # Tách chuỗi theo dòng
+-    lines = text.split('\n')
+-    result = []
+-
+-    # Xử lý từng dòng
+-    for line in lines:
+-        numbers = line.split(',')
+-        result.append(numbers)
+-
+-    print("Parsed result:")
+-    print(result)
+-
+-
+-split_input()
+-
+-# Gọi hàm
+-# split_input()
+-
+-
+-# Cho người dùng nhập vào số đỉnh tối đa: VD: 5
+-# random số đỉnh của graph với range là 2 tới 5
+-# Cho người dùng nhập vào số cạnh tối đa của 1 đỉnh với rang là từ 1 tới số
+-# cạnh tối đa (số đỉnh - 1)
+-# cho người dùng nhập số cạnh tối đa của 1 đỉnh trong điều kiện ở trên
+-# mỗi khi random được 1 cạnh thì random 1 số weight nhất định
+-
+-# result: số đỉnh và số cạnh của mỗi đỉnh
+-def random_graph(max_num_nodes_input,max_num_edges_input):
+-    num_nodes = []
+-    num_nodes_random = random.randint(2, max_num_nodes_input)
+-    for i in range(num_nodes_random):
+-        num_nodes.append(i + 1)
+-
+-    max_num_edges_of_node = len(num_nodes) - 1
+-    min_num_edges_of_node = 1
+-
+-    if (max_num_edges_input > max_num_edges_of_node) or (max_num_edges_input < min_num_edges_of_node):
+-        print("Vui long nhap lai: ")
+-
+-    print(num_nodes)
+-    for i in range(len(num_nodes)):
+-        num_edges = random.randint(min_num_edges_of_node, max_num_edges_of_node)
+-        num_nodes_expected = num_nodes.copy()
+-        num_nodes_expected.remove(num_nodes[i])
+-        isUndirected = random.randint(0, 1)
+-        # dô thi vo huong
+-        if isUndirected:
+-            num_nodes_expected.remove(num_nodes[i])
+-
+-        for j in range(len(num_nodes_expected) - num_edges):
+-            num_nodes_expected.remove(random.choice(num_nodes_expected))
+-        print(f"dinh {num_nodes[i]} co ${num_edges} canh: ${num_nodes_expected}")
+-
+-
+-def draw_graph():
+-
+-
+-    # Bước 1: Tạo một đồ thị rỗng
+-    G = nx.Graph()
++        fig, ax = plt.subplots(figsize=(10, 8))
++        pos = nx.spring_layout(self.G)
++        nx.draw(self.G, pos, ax=ax, with_labels=True, node_color='lightblue',
++                node_size=500, font_size=10, font_color='black')
+ 
+-    # Bước 2: Thêm các đỉnh (nodes)
+-    G.add_nodes_from([1, 2, 3, 4, 5])
+-
+-    # Bước 3: Thêm các cạnh (edges)
+-    G.add_edges_from([(1, 2), (1, 3), (2, 4), (3, 5)])
+-
+-    # Bước 4: Vẽ đồ thị
+-    pos = nx.spring_layout(G)  # Tính toán vị trí các đỉnh
+-    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=800, font_size=16, font_color='black')
+-
+-    # Hiển thị đồ thị
+-    plt.title("Simple Graph")
+-    plt.show()
+-
++        canvas = FigureCanvasTkAgg(fig, master=self.master)
++        canvas_widget = canvas.get_tk_widget()
++        canvas_widget.pack(fill=tk.BOTH, expand=True)
+ 
+ 
+ if __name__ == '__main__':
+     root = tk.Tk()
+-    root.title("Graph")
+-    show_ui(root)
+-    root.state('zoomed')
+-    root.resizable(False, False)
+-    # khởi động UI
++    app = GraphApp(root)
+     root.mainloop()
+-
+-# Tạo một đồ thị vô hướng
+-G = nx.Graph()
+-
+-# Thêm đỉnh
+-G.add_nodes_from([1, 2, 3, 4, 5])
+-
+-# Thêm cạnh
+-G.add_edges_from([(1, 2), (1, 3), (2, 4), (3, 4), (4, 5)])
+-
+-# Vẽ đồ thị
+-nx.draw(G, with_labels=True, node_color='lightblue', node_size=700, font_size=14, font_color='black')
+-plt.title("Một đồ thị ví dụ")
+-plt.show()
+-
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"Black\">\r\n    <option name=\"sdkName\" value=\"C:\\Users\\khoic\\miniconda3\" />\r\n  </component>\r\n  <component name=\"ProjectRootManager\" version=\"2\" project-jdk-name=\"Python 3.11\" project-jdk-type=\"Python SDK\" />\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+--- a/.idea/misc.xml	(revision 0c9e39f36ad0e33d9c91e991bbf276e51d6b53ed)
++++ b/.idea/misc.xml	(date 1727848010876)
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+   <component name="Black">
+-    <option name="sdkName" value="C:\Users\khoic\miniconda3" />
++    <option name="sdkName" value="Python 3.11" />
+   </component>
+-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11" project-jdk-type="Python SDK" />
++  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (DoAnThucTapLapTrinh)" project-jdk-type="Python SDK" />
+ </project>
+\ No newline at end of file
+Index: .idea/DoAnThucTapLapTrinh.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"PYTHON_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\">\r\n    <content url=\"file://$MODULE_DIR$\" />\r\n    <orderEntry type=\"inheritedJdk\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/DoAnThucTapLapTrinh.iml b/.idea/DoAnThucTapLapTrinh.iml
+--- a/.idea/DoAnThucTapLapTrinh.iml	(revision 0c9e39f36ad0e33d9c91e991bbf276e51d6b53ed)
++++ b/.idea/DoAnThucTapLapTrinh.iml	(date 1727848010867)
+@@ -1,7 +1,9 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <module type="PYTHON_MODULE" version="4">
+   <component name="NewModuleRootManager">
+-    <content url="file://$MODULE_DIR$" />
++    <content url="file://$MODULE_DIR$">
++      <excludeFolder url="file://$MODULE_DIR$/venv" />
++    </content>
+     <orderEntry type="inheritedJdk" />
+     <orderEntry type="sourceFolder" forTests="false" />
+   </component>
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"e6f14c0c-345d-4c26-9b8a-6be89b0bc2cf\" name=\"Changes\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/DoAnThucTapLapTrinh.iml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/DoAnThucTapLapTrinh.iml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/misc.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/misc.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/main.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/main.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;customColor&quot;: &quot;&quot;,\r\n  &quot;associatedIndex&quot;: 7\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2mpd3BSmJHOuD438hs1XZExaGJE\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">{\r\n  &quot;keyToString&quot;: {\r\n    &quot;Python.main.executor&quot;: &quot;Run&quot;,\r\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\r\n    &quot;git-widget-placeholder&quot;: &quot;master&quot;,\r\n    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,\r\n    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,\r\n    &quot;settings.editor.selected.configurable&quot;: &quot;advanced.settings&quot;,\r\n    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;\r\n  }\r\n}</component>\r\n  <component name=\"RunManager\">\r\n    <configuration name=\"main\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"DoAnThucTapLapTrinh\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"SDK_NAME\" value=\"Python 3.11\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/main.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-PY-242.23339.19\" />\r\n        <option value=\"bundled-python-sdk-0029f7779945-399fe30bd8c1-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-242.23339.19\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"e6f14c0c-345d-4c26-9b8a-6be89b0bc2cf\" name=\"Changes\" comment=\"\" />\r\n      <created>1727777251009</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1727777251009</updated>\r\n      <workItem from=\"1727777252344\" duration=\"407000\" />\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\r\n    <SUITE FILE_PATH=\"coverage/DoAnThucTapLapTrinh$main.coverage\" NAME=\"main Coverage Results\" MODIFIED=\"1727779698129\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 0c9e39f36ad0e33d9c91e991bbf276e51d6b53ed)
++++ b/.idea/workspace.xml	(date 1727848010871)
+@@ -4,7 +4,7 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="e6f14c0c-345d-4c26-9b8a-6be89b0bc2cf" name="Changes" comment="">
++    <list default="true" id="17b0bd18-b840-4e1d-8756-db8c4e2ca852" name="Changes" comment="">
+       <change beforePath="$PROJECT_DIR$/.idea/DoAnThucTapLapTrinh.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/DoAnThucTapLapTrinh.iml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+@@ -17,29 +17,35 @@
+   </component>
+   <component name="Git.Settings">
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
++  </component>
++  <component name="ProblemsViewState">
++    <option name="selectedTabId" value="CurrentFile" />
+   </component>
+   <component name="ProjectColorInfo">{
+   &quot;customColor&quot;: &quot;&quot;,
+   &quot;associatedIndex&quot;: 7
+ }</component>
+-  <component name="ProjectId" id="2mpd3BSmJHOuD438hs1XZExaGJE" />
++  <component name="ProjectId" id="2mplDcQNJmsanMwotTCjWk3O1dA" />
+   <component name="ProjectViewState">
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent">{
+-  &quot;keyToString&quot;: {
+-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+-    &quot;settings.editor.selected.configurable&quot;: &quot;advanced.settings&quot;,
+-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
++  <component name="PropertiesComponent"><![CDATA[{
++  "keyToString": {
++    "Python.main.executor": "Run",
++    "RunOnceActivity.ShowReadmeOnStart": "true",
++    "git-widget-placeholder": "Merging master",
++    "node.js.detected.package.eslint": "true",
++    "node.js.detected.package.tslint": "true",
++    "node.js.selected.package.eslint": "(autodetect)",
++    "node.js.selected.package.tslint": "(autodetect)",
++    "nodejs_package_manager_path": "npm",
++    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
++    "vue.rearranger.settings.migration": "true"
+   }
+-}</component>
++}]]></component>
+   <component name="RunManager">
+-    <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
++    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+       <module name="DoAnThucTapLapTrinh" />
+       <option name="ENV_FILES" value="" />
+       <option name="INTERPRETER_OPTIONS" value="" />
+@@ -48,9 +54,8 @@
+         <env name="PYTHONUNBUFFERED" value="1" />
+       </envs>
+       <option name="SDK_HOME" value="" />
+-      <option name="SDK_NAME" value="Python 3.11" />
+       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+-      <option name="IS_MODULE_SDK" value="false" />
++      <option name="IS_MODULE_SDK" value="true" />
+       <option name="ADD_CONTENT_ROOTS" value="true" />
+       <option name="ADD_SOURCE_ROOTS" value="true" />
+       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+@@ -63,6 +68,11 @@
+       <option name="INPUT_FILE" value="" />
+       <method v="2" />
+     </configuration>
++    <recent_temporary>
++      <list>
++        <item itemvalue="Python.main" />
++      </list>
++    </recent_temporary>
+   </component>
+   <component name="SharedIndexes">
+     <attachedChunks>
+@@ -75,19 +85,35 @@
+   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+   <component name="TaskManager">
+     <task active="true" id="Default" summary="Default task">
+-      <changelist id="e6f14c0c-345d-4c26-9b8a-6be89b0bc2cf" name="Changes" comment="" />
+-      <created>1727777251009</created>
++      <changelist id="17b0bd18-b840-4e1d-8756-db8c4e2ca852" name="Changes" comment="" />
++      <created>1727781281912</created>
+       <option name="number" value="Default" />
+       <option name="presentableId" value="Default" />
+-      <updated>1727777251009</updated>
+-      <workItem from="1727777252344" duration="407000" />
++      <updated>1727781281912</updated>
++      <workItem from="1727781282404" duration="475000" />
++      <workItem from="1727781838361" duration="347000" />
++      <workItem from="1727782203963" duration="574000" />
++      <workItem from="1727782797949" duration="284000" />
++      <workItem from="1727783099262" duration="484000" />
++      <workItem from="1727783599820" duration="135000" />
+     </task>
+     <servers />
+   </component>
+   <component name="TypeScriptGeneratedFilesManager">
+     <option name="version" value="3" />
+   </component>
++  <component name="Vcs.Log.Tabs.Properties">
++    <option name="TAB_STATES">
++      <map>
++        <entry key="MAIN">
++          <value>
++            <State />
++          </value>
++        </entry>
++      </map>
++    </option>
++  </component>
+   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+-    <SUITE FILE_PATH="coverage/DoAnThucTapLapTrinh$main.coverage" NAME="main Coverage Results" MODIFIED="1727779698129" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
++    <SUITE FILE_PATH="coverage/DoAnThucTapLapTrinh$main.coverage" NAME="main Coverage Results" MODIFIED="1727783623324" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+   </component>
+ </project>
+\ No newline at end of file
